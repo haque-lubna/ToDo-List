@@ -1,65 +1,55 @@
-import Head from 'next/head'
-import styles from '../styles/Home.module.css'
+import { useEffect, useState } from 'react'
+import NewTask from '../components/NewTask'
+import TaskList from '../components/TaskList'
+import { dummyTaskList } from '../data/dummy.data'
+import styles from '../styles/Index.module.css'
+import api from './api/api'
 
-export default function Home() {
+function Home(props) {
+  const [taskList, setTaskList] = useState(null)
+
+  useEffect(() => {
+    api.getAllTaskList()
+      .then(res => {
+        setTaskList(res.data)
+      })
+      .catch(error => {
+        console.log("Error occured ", error)
+      })
+  }, [setTaskList])
+
+  const deleteButtonClickHandler = (id) => {
+    if (window.confirm('Are you sure you wish to delete this item?')){
+      api.deleteTask(id).then(res => {
+        console.log(res)
+        setTaskList(taskList.filter((task) => task.id !== id))
+      }).catch(error => {
+        console.log("Error occured ", error)
+      })
+    }
+  }
+
+  const saveButtonClickHandler = (task) => {
+    api.newTask(task).then(res => {
+      setTaskList([task, ...taskList])
+      {props.toggleAddNewButtonFun(props.showNew)}
+    }).catch((error) => {
+      console.log('Error occured ', error)
+    })
+  }
+
+  const doReminderToggle = (id) => {
+    setTaskList(taskList.map((task) => 
+      task.id === id ? {...task, reminder: !task.reminder } : task
+    ))
+  }
+
   return (
-    <div className={styles.container}>
-      <Head>
-        <title>Create Next App</title>
-        <link rel="icon" href="/favicon.ico" />
-      </Head>
-
-      <main className={styles.main}>
-        <h1 className={styles.title}>
-          Welcome to <a href="https://nextjs.org">Next.js!</a>
-        </h1>
-
-        <p className={styles.description}>
-          Get started by editing{' '}
-          <code className={styles.code}>pages/index.js</code>
-        </p>
-
-        <div className={styles.grid}>
-          <a href="https://nextjs.org/docs" className={styles.card}>
-            <h3>Documentation &rarr;</h3>
-            <p>Find in-depth information about Next.js features and API.</p>
-          </a>
-
-          <a href="https://nextjs.org/learn" className={styles.card}>
-            <h3>Learn &rarr;</h3>
-            <p>Learn about Next.js in an interactive course with quizzes!</p>
-          </a>
-
-          <a
-            href="https://github.com/vercel/next.js/tree/master/examples"
-            className={styles.card}
-          >
-            <h3>Examples &rarr;</h3>
-            <p>Discover and deploy boilerplate example Next.js projects.</p>
-          </a>
-
-          <a
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=default-template&utm_campaign=create-next-app"
-            className={styles.card}
-          >
-            <h3>Deploy &rarr;</h3>
-            <p>
-              Instantly deploy your Next.js site to a public URL with Vercel.
-            </p>
-          </a>
-        </div>
-      </main>
-
-      <footer className={styles.footer}>
-        <a
-          href="https://vercel.com?utm_source=create-next-app&utm_medium=default-template&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Powered by{' '}
-          <img src="/vercel.svg" alt="Vercel Logo" className={styles.logo} />
-        </a>
-      </footer>
+    <div className={ styles.container }>
+      {props.showNew && <NewTask saveFunction={ saveButtonClickHandler }/>}
+      <TaskList taskList={taskList} deleteFunction={ deleteButtonClickHandler } toggleFunction={ doReminderToggle }/>
     </div>
   )
 }
+
+export default Home
